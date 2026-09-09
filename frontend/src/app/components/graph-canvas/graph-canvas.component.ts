@@ -61,23 +61,30 @@ import cytoscape from 'cytoscape';
         </div>
       </div>
 
+      <!-- Active Sub-Graph Mode Indicator Banner -->
+      <div *ngIf="failedNodeId || directNodeIds.size > 0" class="absolute top-4 right-4 z-20 bg-slate-900/95 p-3 rounded-xl border border-rose-500/40 backdrop-blur-md shadow-2xl flex items-center space-x-3 text-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+        <div>
+          <span class="font-bold text-rose-300 block">Direct & Indirect Dependency Sub-Graph Active</span>
+          <span class="text-[11px] text-slate-400">Direct 1-Hop vs Indirect Cascade Downstream Tracing</span>
+        </div>
+        <button (click)="clearHighlightsAction.emit()" class="ml-2 text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800">Clear</button>
+      </div>
+
       <!-- Legend Overlay -->
-      <div class="absolute bottom-4 left-4 z-20 flex items-center space-x-4 bg-slate-900/95 px-4 py-2.5 rounded-xl border border-slate-800 text-xs backdrop-blur-md shadow-xl">
-        <div class="flex items-center space-x-2">
-          <span class="w-3 h-3 rounded-full bg-blue-500 inline-block shadow-sm shadow-blue-500/50"></span>
-          <span class="text-white font-medium">API</span>
+      <div class="absolute bottom-4 left-4 z-20 flex flex-wrap items-center gap-3 bg-slate-900/95 px-4 py-2.5 rounded-xl border border-slate-800 text-xs backdrop-blur-md shadow-xl">
+        <!-- Types -->
+        <div class="flex items-center space-x-3 border-r border-slate-800 pr-3">
+          <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block shadow-sm shadow-blue-500/50"></span><span class="text-white font-medium">API</span></div>
+          <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block shadow-sm shadow-purple-500/50"></span><span class="text-white font-medium">App</span></div>
+          <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-sm shadow-emerald-500/50"></span><span class="text-white font-medium">DB</span></div>
+          <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-amber-500 inline-block shadow-sm shadow-amber-500/50"></span><span class="text-white font-medium">External</span></div>
         </div>
-        <div class="flex items-center space-x-2">
-          <span class="w-3 h-3 rounded-full bg-purple-500 inline-block shadow-sm shadow-purple-500/50"></span>
-          <span class="text-white font-medium">Application</span>
-        </div>
-        <div class="flex items-center space-x-2">
-          <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-sm shadow-emerald-500/50"></span>
-          <span class="text-white font-medium">Database</span>
-        </div>
-        <div class="flex items-center space-x-2">
-          <span class="w-3 h-3 rounded-full bg-amber-500 inline-block shadow-sm shadow-amber-500/50"></span>
-          <span class="text-white font-medium">External</span>
+        <!-- Dependency Status -->
+        <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-red-600 border border-white inline-block"></span><span class="text-rose-400 font-bold">Target Service</span></div>
+          <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-sky-500 border border-sky-300 inline-block"></span><span class="text-sky-300 font-bold">Direct (1-Hop)</span></div>
+          <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-full bg-purple-600 border border-rose-400 inline-block"></span><span class="text-purple-300 font-bold">Indirect Cascade</span></div>
         </div>
       </div>
 
@@ -159,11 +166,14 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
 
   @Input() graphData: GraphData | null = null;
   @Input() highlightedNodeIds: Set<number> = new Set();
+  @Input() directNodeIds: Set<number> = new Set();
+  @Input() indirectNodeIds: Set<number> = new Set();
   @Input() failedNodeId: number | null = null;
 
   @Output() actionSimulateOutage = new EventEmitter<number>();
   @Output() actionAnalyzeImpact = new EventEmitter<number>();
   @Output() actionAIAudit = new EventEmitter<number>();
+  @Output() clearHighlightsAction = new EventEmitter<void>();
 
   private cy: any;
   selectedNode: ComponentNode | null = null;
@@ -180,7 +190,7 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
     if (changes['graphData'] && this.graphData) {
       this.initCytoscape();
     }
-    if (changes['highlightedNodeIds'] || changes['failedNodeId']) {
+    if (changes['highlightedNodeIds'] || changes['failedNodeId'] || changes['directNodeIds'] || changes['indirectNodeIds']) {
       this.applyHighlights();
     }
   }
@@ -289,29 +299,61 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
           }
         },
         {
-          selector: '.highlighted-impacted',
-          style: {
-            'background-color': '#f43f5e',
-            'border-color': '#ffffff',
-            'border-width': 4,
-            'opacity': 1.0
-          }
-        },
-        {
           selector: '.highlighted-failed',
           style: {
             'background-color': '#dc2626',
             'border-color': '#ffffff',
-            'border-width': 5,
-            'width': 54,
-            'height': 54,
+            'border-width': 6,
+            'width': 56,
+            'height': 56,
+            'opacity': 1.0
+          }
+        },
+        {
+          selector: '.highlighted-direct',
+          style: {
+            'background-color': '#0284c7',
+            'border-color': '#38bdf8',
+            'border-width': 4.5,
+            'width': 48,
+            'height': 48,
+            'opacity': 1.0
+          }
+        },
+        {
+          selector: '.highlighted-indirect',
+          style: {
+            'background-color': '#9333ea',
+            'border-color': '#f43f5e',
+            'border-width': 4,
+            'width': 44,
+            'height': 44,
+            'opacity': 1.0
+          }
+        },
+        {
+          selector: '.edge-direct',
+          style: {
+            'line-color': '#38bdf8',
+            'target-arrow-color': '#38bdf8',
+            'width': 4,
+            'opacity': 1.0
+          }
+        },
+        {
+          selector: '.edge-indirect',
+          style: {
+            'line-color': '#f43f5e',
+            'target-arrow-color': '#f43f5e',
+            'width': 3,
+            'line-style': 'dashed',
             'opacity': 1.0
           }
         },
         {
           selector: '.dimmed',
           style: {
-            'opacity': 0.15
+            'opacity': 0.12
           }
         }
       ],
@@ -327,6 +369,7 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
     this.cy.ready(() => {
       this.cy.resize();
       this.cy.fit();
+      this.applyHighlights();
     });
 
     this.cy.on('tap', 'node', (evt: any) => {
@@ -352,20 +395,24 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
 
   private clearHighlights(): void {
     if (!this.cy) return;
-    this.cy.elements().removeClass('dimmed highlighted-impacted highlighted-failed');
+    this.cy.elements().removeClass('dimmed highlighted-direct highlighted-indirect highlighted-failed edge-direct edge-indirect');
   }
 
   private applyHighlights(): void {
     if (!this.cy) return;
-    this.cy.elements().removeClass('highlighted-impacted highlighted-failed dimmed');
+    this.cy.elements().removeClass('highlighted-direct highlighted-indirect highlighted-failed edge-direct edge-indirect dimmed');
 
-    if (this.failedNodeId || this.highlightedNodeIds.size > 0) {
+    const hasHighlighting = this.failedNodeId || this.directNodeIds.size > 0 || this.indirectNodeIds.size > 0 || this.highlightedNodeIds.size > 0;
+
+    if (hasHighlighting) {
       this.cy.nodes().forEach((node: any) => {
         const id = parseInt(node.id(), 10);
         if (id === this.failedNodeId) {
           node.addClass('highlighted-failed');
-        } else if (this.highlightedNodeIds.has(id)) {
-          node.addClass('highlighted-impacted');
+        } else if (this.directNodeIds.has(id)) {
+          node.addClass('highlighted-direct');
+        } else if (this.indirectNodeIds.has(id) || this.highlightedNodeIds.has(id)) {
+          node.addClass('highlighted-indirect');
         } else {
           node.addClass('dimmed');
         }
@@ -374,9 +421,12 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
       this.cy.edges().forEach((edge: any) => {
         const sourceId = parseInt(edge.source().id(), 10);
         const targetId = parseInt(edge.target().id(), 10);
-        if ((sourceId === this.failedNodeId || this.highlightedNodeIds.has(sourceId)) &&
-            this.highlightedNodeIds.has(targetId)) {
-          edge.addClass('highlighted-impacted');
+
+        if (sourceId === this.failedNodeId && this.directNodeIds.has(targetId)) {
+          edge.addClass('edge-direct');
+        } else if ((sourceId === this.failedNodeId || this.directNodeIds.has(sourceId) || this.indirectNodeIds.has(sourceId)) &&
+                   (this.directNodeIds.has(targetId) || this.indirectNodeIds.has(targetId) || this.highlightedNodeIds.has(targetId))) {
+          edge.addClass('edge-indirect');
         } else {
           edge.addClass('dimmed');
         }

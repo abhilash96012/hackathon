@@ -43,6 +43,14 @@ import { ComponentNode, OutageSimulationResult } from '../../models/graph.model'
           <i class="fa-solid fa-bolt"></i>
           <span>Run Outage Blast Radius Test</span>
         </button>
+
+        <button
+          *ngIf="result"
+          (click)="viewInGraph.emit()"
+          class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-lg shadow-sky-600/30 flex items-center space-x-2 transition-all">
+          <i class="fa-solid fa-diagram-project"></i>
+          <span>View Sub-Graph Canvas →</span>
+        </button>
       </div>
 
       <!-- Simulation Results -->
@@ -145,6 +153,7 @@ export class OutageSimulatorComponent {
   @Input() selectedComponentId: number = 0;
 
   @Output() runOutage = new EventEmitter<number>();
+  @Output() viewInGraph = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
 
   onSelectComponent(id: number): void {

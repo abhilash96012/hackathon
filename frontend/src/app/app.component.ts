@@ -52,10 +52,13 @@ import { AIResilienceComponent } from './components/ai-resilience/ai-resilience.
           <app-graph-canvas
             [graphData]="graphData"
             [highlightedNodeIds]="highlightedNodeIds"
+            [directNodeIds]="directNodeIds"
+            [indirectNodeIds]="indirectNodeIds"
             [failedNodeId]="failedNodeId"
             (actionSimulateOutage)="triggerOutageSimulation($event)"
             (actionAnalyzeImpact)="triggerChangeImpact($event)"
-            (actionAIAudit)="triggerAIAudit($event)">
+            (actionAIAudit)="triggerAIAudit($event)"
+            (clearHighlightsAction)="clearHighlights()">
           </app-graph-canvas>
         </div>
 
@@ -66,6 +69,7 @@ import { AIResilienceComponent } from './components/ai-resilience/ai-resilience.
             [result]="outageResult"
             [selectedComponentId]="selectedComponentId"
             (runOutage)="runOutageSimulation($event)"
+            (viewInGraph)="onModeChange('EXPLORE')"
             (close)="onModeChange('EXPLORE')">
           </app-outage-simulator>
         </div>
@@ -77,6 +81,7 @@ import { AIResilienceComponent } from './components/ai-resilience/ai-resilience.
             [result]="impactResult"
             [selectedComponentId]="selectedComponentId"
             (runImpact)="runChangeImpact($event)"
+            (viewInGraph)="onModeChange('EXPLORE')"
             (close)="onModeChange('EXPLORE')">
           </app-change-impact>
         </div>
@@ -117,6 +122,8 @@ export class AppComponent implements OnInit {
   aiReport: AIResilienceReport | null = null;
 
   highlightedNodeIds: Set<number> = new Set();
+  directNodeIds: Set<number> = new Set();
+  indirectNodeIds: Set<number> = new Set();
   failedNodeId: number | null = null;
 
   constructor(private apiService: ApiService) {}
@@ -163,10 +170,6 @@ export class AppComponent implements OnInit {
 
   onModeChange(mode: string): void {
     this.activeMode = mode;
-    if (mode === 'EXPLORE') {
-      this.clearHighlights();
-      this.loadGraphAndMetrics();
-    }
   }
 
   onDatasetChange(id: number): void {
@@ -188,6 +191,8 @@ export class AppComponent implements OnInit {
         this.outageResult = res;
         this.failedNodeId = componentId;
         this.highlightedNodeIds = new Set(res.impactedNodeIds);
+        this.directNodeIds = new Set(res.directImpactComponents.map(c => c.id));
+        this.indirectNodeIds = new Set(res.indirectImpactComponents.map(c => c.id));
       }
     });
   }
@@ -203,6 +208,10 @@ export class AppComponent implements OnInit {
     this.apiService.analyzeImpact(this.selectedDatasetId, componentId).subscribe({
       next: (res) => {
         this.impactResult = res;
+        this.failedNodeId = componentId;
+        this.directNodeIds = new Set(res.directImpact.map(c => c.id));
+        this.indirectNodeIds = new Set(res.indirectImpact.map(c => c.id));
+        this.highlightedNodeIds = new Set([...res.directImpact.map(c => c.id), ...res.indirectImpact.map(c => c.id)]);
       }
     });
   }
@@ -235,5 +244,7 @@ export class AppComponent implements OnInit {
   clearHighlights(): void {
     this.failedNodeId = null;
     this.highlightedNodeIds = new Set();
+    this.directNodeIds = new Set();
+    this.indirectNodeIds = new Set();
   }
 }
