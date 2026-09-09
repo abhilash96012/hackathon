@@ -112,7 +112,31 @@ textarea::placeholder {
   border: 1px solid rgba(239, 68, 68, 0.5);
 }
 
-/* Cytoscape Canvas Container */
+/* Cytoscape Canvas Container & Layout Rules */
+.graph-canvas-container {
+  width: 100% !important;
+  height: calc(100vh - 180px) !important;
+  min-height: 650px !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background-color: #090d16 !important;
+  overflow: hidden !important;
+}
+
+.cy-viewport {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 650px !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background-color: #090d16 !important;
+  z-index: 1 !important;
+}
+
 #cy {
   width: 100%;
   height: 100%;

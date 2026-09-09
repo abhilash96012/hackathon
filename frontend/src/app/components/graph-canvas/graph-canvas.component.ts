@@ -15,8 +15,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComponentNode, GraphData } from '../../models/graph.model';
 
-import * as cytoscapeImport from 'cytoscape';
-const cytoscape = (cytoscapeImport as any).default || cytoscapeImport;
+import * as cytoscapeModule from 'cytoscape';
+
+function getCytoscape(): any {
+  const mod = cytoscapeModule as any;
+  if (typeof mod === 'function') return mod;
+  if (mod && typeof mod.default === 'function') return mod.default;
+  if (mod && mod.default && typeof mod.default.default === 'function') return mod.default.default;
+  return mod;
+}
 
 @Component({
   selector: 'app-graph-canvas',
@@ -32,7 +39,7 @@ const cytoscape = (cytoscapeImport as any).default || cytoscapeImport;
     }
   `],
   template: `
-    <div class="relative w-full h-full min-h-[650px] flex flex-col bg-slate-950 overflow-hidden">
+    <div class="graph-canvas-container relative w-full flex flex-col bg-slate-950 overflow-hidden" style="width: 100%; height: calc(100vh - 180px); min-height: 650px; position: relative;">
       <!-- Search & Filter Controls Floating Bar -->
       <div class="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-3 bg-slate-900/95 p-2.5 rounded-xl border border-slate-800 backdrop-blur-md shadow-2xl">
         <!-- Search Input -->
@@ -100,7 +107,7 @@ const cytoscape = (cytoscapeImport as any).default || cytoscapeImport;
       </div>
 
       <!-- Cytoscape Canvas Container -->
-      <div #cyContainer class="w-full h-full min-h-[650px] absolute inset-0 bg-[#090d16]"></div>
+      <div #cyContainer class="cy-viewport bg-[#090d16]" style="width: 100%; height: 100%; min-height: 650px; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;"></div>
 
       <!-- Selected Node Detail Side Drawer -->
       <div *ngIf="selectedNode" class="absolute top-4 right-4 bottom-4 w-84 z-30 bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between overflow-y-auto">
@@ -274,6 +281,7 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
     }
 
     try {
+      const cytoscape = getCytoscape();
       this.cy = cytoscape({
         container: container,
         elements: elements,
