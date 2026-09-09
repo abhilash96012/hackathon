@@ -40,6 +40,23 @@ code, pre {
   background: #475569;
 }
 
+/* High Contrast Input & Placeholder Styling */
+input::placeholder,
+textarea::placeholder {
+  color: #cbd5e1 !important; /* Slate 300 - crisp, bright and clearly readable */
+  opacity: 1 !important;
+  font-weight: 500 !important;
+}
+
+input, select, textarea {
+  color: #ffffff !important;
+}
+
+option {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
 /* Glassmorphism Panel */
 .glass-panel {
   background: rgba(15, 23, 42, 0.75);

@@ -31,8 +31,8 @@ import cytoscape from 'cytoscape';
             type="text"
             [(ngModel)]="searchQuery"
             (ngModelChange)="filterGraph()"
-            placeholder="Search component..."
-            class="pl-8 pr-3 py-1.5 bg-slate-950 text-xs text-white border border-slate-700/80 rounded-lg focus:outline-none focus:border-amber-500 w-52 transition-colors">
+            placeholder="Search component by name..."
+            class="pl-8 pr-3 py-1.5 bg-slate-950 text-xs text-white placeholder-slate-300 font-medium border border-slate-700/80 rounded-lg focus:outline-none focus:border-amber-500 w-56 transition-colors">
         </div>
 
         <!-- Filter by Type -->

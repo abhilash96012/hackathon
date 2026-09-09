@@ -32,8 +32,8 @@ import { FormsModule } from '@angular/forms';
           <input
             type="text"
             [(ngModel)]="datasetName"
-            placeholder="e.g. UPS Smart Logistics Microservices v2"
-            class="w-full bg-slate-950 text-xs text-slate-100 border border-slate-700 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-sky-500">
+            placeholder="Enter Dataset Name (e.g. UPS Smart Logistics Microservices v2)"
+            class="w-full bg-slate-950 text-xs text-white placeholder-slate-300 font-medium border border-slate-700 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-sky-500">
         </div>
 
         <div>
@@ -41,28 +41,29 @@ import { FormsModule } from '@angular/forms';
           <input
             type="text"
             [(ngModel)]="description"
-            placeholder="e.g. Production microservices topology for UPS campus hackathon"
-            class="w-full bg-slate-950 text-xs text-slate-100 border border-slate-700 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-sky-500">
+            placeholder="Enter Description (e.g. Production microservices topology for UPS hackathon)"
+            class="w-full bg-slate-950 text-xs text-white placeholder-slate-300 font-medium border border-slate-700 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-sky-500">
         </div>
 
         <div>
           <div class="flex justify-between items-center mb-1">
             <label class="block text-xs font-semibold text-slate-300">YAML Definition File(s) Content:</label>
-            <button (click)="loadSampleYaml()" class="text-xs text-sky-400 hover:underline">
+            <button (click)="loadSampleYaml()" class="text-xs text-sky-400 font-semibold hover:underline">
               Load Sample YAML Template
             </button>
           </div>
           <textarea
             [(ngModel)]="yamlContent"
             rows="12"
-            placeholder="Paste your YAML content here...
-service: auth-service
+            placeholder="Paste your YAML dependency content here...
+
+service: Auth Service
 type: API
 dependencies: []
 consumers:
   - Customer Portal
   - Admin Console"
-            class="w-full bg-slate-950 text-xs font-mono text-slate-200 border border-slate-700 rounded-xl p-3.5 focus:outline-none focus:border-sky-500">
+            class="w-full bg-slate-950 text-xs font-mono text-white placeholder-slate-300 font-medium border border-slate-700 rounded-xl p-3.5 focus:outline-none focus:border-sky-500">
           </textarea>
         </div>
       </div>
