@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ups-dependencylens-db
+    environment:
+      POSTGRES_DB: ups_dependencylens
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ups_dependencylens"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ups_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ups-dependencylens-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/ups_dependencylens"
+      DB_DRIVER: "org.postgresql.Driver"
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgrespassword
+      CORS_ALLOWED_ORIGINS: "http://localhost,http://localhost:80,http://localhost:4200"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ups_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ups-dependencylens-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - ups_network
+
+networks:
+  ups_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
