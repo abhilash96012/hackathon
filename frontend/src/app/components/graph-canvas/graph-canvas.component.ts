@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  HostListener,
   Input,
   OnChanges,
   OnDestroy,
@@ -68,7 +69,7 @@ import cytoscape from 'cytoscape';
           <span class="font-bold text-rose-300 block">Direct & Indirect Dependency Sub-Graph Active</span>
           <span class="text-[11px] text-slate-400">Direct 1-Hop vs Indirect Cascade Downstream Tracing</span>
         </div>
-        <button (click)="clearHighlightsAction.emit()" class="ml-2 text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800">Clear</button>
+        <button (click)="clearHighlightsAction.emit()" class="ml-2 text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800 font-semibold">Clear</button>
       </div>
 
       <!-- Legend Overlay -->
@@ -180,18 +181,28 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
   searchQuery: string = '';
   selectedTypeFilter: string = 'ALL';
 
-  ngAfterViewInit(): void {
-    if (this.graphData) {
-      this.initCytoscape();
+  @HostListener('window:resize')
+  onResize(): void {
+    if (this.cy) {
+      this.cy.resize();
+      this.cy.fit();
     }
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      if (this.graphData) {
+        this.initCytoscape();
+      }
+    }, 50);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['graphData'] && this.graphData) {
-      this.initCytoscape();
+      setTimeout(() => this.initCytoscape(), 50);
     }
     if (changes['highlightedNodeIds'] || changes['failedNodeId'] || changes['directNodeIds'] || changes['indirectNodeIds']) {
-      this.applyHighlights();
+      setTimeout(() => this.applyHighlights(), 60);
     }
   }
 
@@ -202,7 +213,7 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
   }
 
   private initCytoscape(): void {
-    if (!this.graphData || !this.cyContainer) return;
+    if (!this.graphData || !this.cyContainer?.nativeElement) return;
 
     const elements: any[] = [];
 
@@ -366,11 +377,13 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
       }
     });
 
-    this.cy.ready(() => {
-      this.cy.resize();
-      this.cy.fit();
-      this.applyHighlights();
-    });
+    setTimeout(() => {
+      if (this.cy) {
+        this.cy.resize();
+        this.cy.fit();
+        this.applyHighlights();
+      }
+    }, 100);
 
     this.cy.on('tap', 'node', (evt: any) => {
       const nodeData = evt.target.data('rawNode');
