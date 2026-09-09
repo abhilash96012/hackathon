@@ -40,21 +40,36 @@ code, pre {
   background: #475569;
 }
 
+/* Universal Dark Form Controls - NO MORE WHITE BOXES ANYWHERE */
+select,
+input,
+textarea {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  border: 1px solid #334155 !important;
+  border-radius: 0.75rem !important;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  border-color: #f59e0b !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2) !important;
+}
+
+select option {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  padding: 8px !important;
+}
+
 /* High Contrast Input & Placeholder Styling */
 input::placeholder,
 textarea::placeholder {
-  color: #cbd5e1 !important; /* Slate 300 - crisp, bright and clearly readable */
+  color: #94a3b8 !important; /* Slate 400 - crisp, bright and clearly readable */
   opacity: 1 !important;
   font-weight: 500 !important;
-}
-
-input, select, textarea {
-  color: #ffffff !important;
-}
-
-option {
-  background-color: #0f172a !important;
-  color: #ffffff !important;
 }
 
 /* Glassmorphism Panel */

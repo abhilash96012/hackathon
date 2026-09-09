@@ -73,8 +73,8 @@ import { Dataset } from '../../models/graph.model';
           <select
             [ngModel]="selectedDatasetId"
             (ngModelChange)="datasetChange.emit($event)"
-            class="bg-transparent text-xs text-slate-200 font-medium focus:outline-none cursor-pointer">
-            <option *ngFor="let ds of datasets" [value]="ds.id" class="bg-slate-900 text-slate-200">
+            class="bg-slate-900 text-xs text-white font-semibold focus:outline-none cursor-pointer border border-slate-700 rounded-lg px-2.5 py-1">
+            <option *ngFor="let ds of datasets" [value]="ds.id" class="bg-slate-900 text-white font-medium">
               {{ ds.name }} {{ ds.isDefault ? '(Default)' : '' }}
             </option>
           </select>

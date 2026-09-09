@@ -32,8 +32,8 @@ import { ChangeImpactResult, ComponentNode } from '../../models/graph.model';
         <select
           [ngModel]="selectedComponentId"
           (ngModelChange)="onSelectComponent($event)"
-          class="flex-grow bg-slate-900 text-sm text-slate-100 font-medium border border-slate-700 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500 cursor-pointer">
-          <option *ngFor="let node of allNodes" [value]="node.id">
+          class="flex-grow bg-slate-900 text-sm text-white font-semibold border border-slate-700 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+          <option *ngFor="let node of allNodes" [value]="node.id" class="bg-slate-900 text-white font-medium">
             {{ node.name }} ({{ node.type }})
           </option>
         </select>
