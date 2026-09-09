@@ -187,6 +187,7 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
   @Output() clearHighlightsAction = new EventEmitter<void>();
 
   private cy: any;
+  private initTimeout: any;
   selectedNode: ComponentNode | null = null;
   searchQuery: string = '';
   selectedTypeFilter: string = 'ALL';
@@ -195,32 +196,51 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
   onResize(): void {
     if (this.cy) {
       this.cy.resize();
-      this.cy.fit();
+      this.cy.fit(undefined, 40);
     }
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.initCytoscape();
-    }, 50);
+    this.scheduleInit();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['graphData']) {
-      setTimeout(() => this.initCytoscape(), 50);
+      this.scheduleInit();
     } else if (changes['highlightedNodeIds'] || changes['failedNodeId'] || changes['directNodeIds'] || changes['indirectNodeIds']) {
-      setTimeout(() => this.applyHighlights(), 80);
+      if (this.cy) {
+        setTimeout(() => this.applyHighlights(), 50);
+      } else {
+        this.scheduleInit();
+      }
     }
   }
 
   ngOnDestroy(): void {
+    if (this.initTimeout) {
+      clearTimeout(this.initTimeout);
+    }
     if (this.cy) {
       this.cy.destroy();
     }
   }
 
+  private scheduleInit(): void {
+    if (this.initTimeout) {
+      clearTimeout(this.initTimeout);
+    }
+    this.initTimeout = setTimeout(() => {
+      this.initCytoscape();
+    }, 60);
+  }
+
   private initCytoscape(): void {
-    if (!this.cyContainer?.nativeElement) return;
+    const container = this.cyContainer?.nativeElement;
+    if (!container) return;
+    if (container.clientWidth === 0 || container.clientHeight === 0) {
+      this.scheduleInit();
+      return;
+    }
     if (!this.graphData || !this.graphData.nodes || this.graphData.nodes.length === 0) return;
 
     const elements: any[] = [];
@@ -255,7 +275,7 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
 
     try {
       this.cy = cytoscape({
-        container: this.cyContainer.nativeElement,
+        container: container,
         elements: elements,
         style: [
           {
@@ -381,26 +401,29 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
               'opacity': 0.35
             }
           }
-        ]
-      });
-
-      const layout = this.cy.layout({
-        name: 'breadthfirst',
-        directed: true,
-        padding: 50,
-        spacingFactor: 1.25,
-        animate: false
-      });
-
-      layout.one('layoutstop', () => {
-        if (this.cy) {
-          this.cy.resize();
-          this.applyHighlights();
-          this.cy.fit(undefined, 40);
+        ],
+        layout: {
+          name: 'cose',
+          animate: false,
+          fit: true,
+          padding: 60,
+          randomize: false,
+          componentSpacing: 120,
+          nodeRepulsion: () => 400000,
+          idealEdgeLength: () => 100,
+          edgeElasticity: () => 100,
+          nestingFactor: 5,
+          gravity: 80,
+          numIter: 1000
         }
       });
 
-      layout.run();
+      setTimeout(() => {
+        if (this.cy) {
+          this.cy.resize();
+          this.applyHighlights();
+        }
+      }, 100);
 
       this.cy.on('tap', 'node', (evt: any) => {
         const nodeData = evt.target.data('rawNode');
@@ -466,9 +489,11 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
       });
 
       // Automatically focus and fit viewport on highlighted sub-graph elements
-      const subGraphElements = this.cy.nodes('.highlighted-failed, .highlighted-direct, .highlighted-indirect');
+      const subGraphElements = this.cy.$('.highlighted-failed, .highlighted-direct, .highlighted-indirect');
       if (subGraphElements.length > 0) {
         this.cy.fit(subGraphElements, 60);
+      } else {
+        this.cy.fit(undefined, 40);
       }
     } else {
       this.cy.fit(undefined, 40);
