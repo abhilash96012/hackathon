@@ -48,7 +48,7 @@ import { AIResilienceComponent } from './components/ai-resilience/ai-resilience.
       <!-- Main Canvas Container -->
       <main class="flex-grow relative flex flex-col">
         <!-- Interactive Graph View -->
-        <div class="w-full flex-grow relative" [class.hidden]="activeMode !== 'EXPLORE'">
+        <div *ngIf="activeMode === 'EXPLORE'" class="w-full flex-grow relative">
           <app-graph-canvas
             [graphData]="graphData"
             [highlightedNodeIds]="highlightedNodeIds"
@@ -132,15 +132,20 @@ export class AppComponent implements OnInit {
         if (dsList.length > 0) {
           const defaultDs = dsList.find(d => d.isDefault) || dsList[0];
           this.selectedDatasetId = defaultDs.id;
-          this.loadGraphAndMetrics();
+        } else {
+          this.selectedDatasetId = 1;
         }
+        this.loadGraphAndMetrics();
       },
-      error: (err) => console.error('Failed to load datasets:', err)
+      error: () => {
+        this.selectedDatasetId = 1;
+        this.loadGraphAndMetrics();
+      }
     });
   }
 
   loadGraphAndMetrics(): void {
-    if (!this.selectedDatasetId) return;
+    if (!this.selectedDatasetId) this.selectedDatasetId = 1;
 
     this.apiService.getGraphData(this.selectedDatasetId).subscribe({
       next: (data) => {
@@ -148,13 +153,11 @@ export class AppComponent implements OnInit {
         if (data.nodes.length > 0 && !this.selectedComponentId) {
           this.selectedComponentId = data.nodes[0].id;
         }
-      },
-      error: (err) => console.error('Failed to load graph data:', err)
+      }
     });
 
     this.apiService.getMetrics(this.selectedDatasetId).subscribe({
-      next: (m) => this.metrics = m,
-      error: (err) => console.error('Failed to load metrics:', err)
+      next: (m) => this.metrics = m
     });
   }
 
@@ -162,6 +165,7 @@ export class AppComponent implements OnInit {
     this.activeMode = mode;
     if (mode === 'EXPLORE') {
       this.clearHighlights();
+      this.loadGraphAndMetrics();
     }
   }
 
@@ -184,8 +188,7 @@ export class AppComponent implements OnInit {
         this.outageResult = res;
         this.failedNodeId = componentId;
         this.highlightedNodeIds = new Set(res.impactedNodeIds);
-      },
-      error: (err) => console.error('Failed to simulate outage:', err)
+      }
     });
   }
 
@@ -200,8 +203,7 @@ export class AppComponent implements OnInit {
     this.apiService.analyzeImpact(this.selectedDatasetId, componentId).subscribe({
       next: (res) => {
         this.impactResult = res;
-      },
-      error: (err) => console.error('Failed to analyze change impact:', err)
+      }
     });
   }
 
@@ -216,19 +218,17 @@ export class AppComponent implements OnInit {
     this.apiService.getAIResilienceAudit(this.selectedDatasetId, componentId).subscribe({
       next: (rep) => {
         this.aiReport = rep;
-      },
-      error: (err) => console.error('Failed to run AI audit:', err)
+      }
     });
   }
 
   handleYamlUpload(event: { name: string; desc: string; yaml: string[] }): void {
     this.apiService.uploadYamlDataset(event.name, event.desc, event.yaml).subscribe({
       next: (newDataset) => {
-        this.loadDatasets();
         this.selectedDatasetId = newDataset.id;
         this.activeMode = 'EXPLORE';
-      },
-      error: (err) => console.error('Failed to upload dataset:', err)
+        this.loadDatasets();
+      }
     });
   }
 
