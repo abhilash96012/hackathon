@@ -48,8 +48,9 @@ import { AIResilienceComponent } from './components/ai-resilience/ai-resilience.
       <!-- Main Canvas Container -->
       <main class="flex-grow relative flex flex-col">
         <!-- Interactive Graph View -->
-        <div *ngIf="activeMode === 'EXPLORE'" class="w-full flex-grow relative">
+        <div *ngIf="activeMode === 'EXPLORE'" class="w-full flex-grow relative min-h-[650px] h-[calc(100vh-140px)] flex flex-col">
           <app-graph-canvas
+            class="w-full h-full flex-grow relative"
             [graphData]="graphData"
             [highlightedNodeIds]="highlightedNodeIds"
             [directNodeIds]="directNodeIds"

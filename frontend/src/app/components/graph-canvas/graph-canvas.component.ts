@@ -15,14 +15,24 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComponentNode, GraphData } from '../../models/graph.model';
 
-import cytoscape from 'cytoscape';
+import * as cytoscapeImport from 'cytoscape';
+const cytoscape = (cytoscapeImport as any).default || cytoscapeImport;
 
 @Component({
   selector: 'app-graph-canvas',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  styles: [`
+    :host {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 650px;
+      position: relative;
+    }
+  `],
   template: `
-    <div class="relative w-full h-[calc(100vh-140px)] min-h-[650px] flex flex-col bg-slate-950 overflow-hidden">
+    <div class="relative w-full h-full min-h-[650px] flex flex-col bg-slate-950 overflow-hidden">
       <!-- Search & Filter Controls Floating Bar -->
       <div class="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-3 bg-slate-900/95 p-2.5 rounded-xl border border-slate-800 backdrop-blur-md shadow-2xl">
         <!-- Search Input -->
@@ -33,7 +43,7 @@ import cytoscape from 'cytoscape';
             [(ngModel)]="searchQuery"
             (ngModelChange)="filterGraph()"
             placeholder="Search component by name..."
-            class="pl-8 pr-3 py-1.5 bg-slate-950 text-xs text-white placeholder-slate-300 font-medium border border-slate-700/80 rounded-lg focus:outline-none focus:border-amber-500 w-56 transition-colors">
+            class="pl-8 pr-3 py-1.5 bg-slate-950 text-xs text-white placeholder-slate-400 font-medium border border-slate-700/80 rounded-lg focus:outline-none focus:border-amber-500 w-56 transition-colors">
         </div>
 
         <!-- Filter by Type -->
@@ -90,7 +100,7 @@ import cytoscape from 'cytoscape';
       </div>
 
       <!-- Cytoscape Canvas Container -->
-      <div #cyContainer class="w-full h-full absolute inset-0 bg-slate-950"></div>
+      <div #cyContainer class="w-full h-full min-h-[650px] absolute inset-0 bg-[#090d16]"></div>
 
       <!-- Selected Node Detail Side Drawer -->
       <div *ngIf="selectedNode" class="absolute top-4 right-4 bottom-4 w-84 z-30 bg-slate-900/95 border border-slate-800 rounded-2xl p-5 shadow-2xl backdrop-blur-xl flex flex-col justify-between overflow-y-auto">
@@ -191,18 +201,15 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
 
   ngAfterViewInit(): void {
     setTimeout(() => {
-      if (this.graphData) {
-        this.initCytoscape();
-      }
+      this.initCytoscape();
     }, 50);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['graphData'] && this.graphData) {
+    if (changes['graphData']) {
       setTimeout(() => this.initCytoscape(), 50);
-    }
-    if (changes['highlightedNodeIds'] || changes['failedNodeId'] || changes['directNodeIds'] || changes['indirectNodeIds']) {
-      setTimeout(() => this.applyHighlights(), 60);
+    } else if (changes['highlightedNodeIds'] || changes['failedNodeId'] || changes['directNodeIds'] || changes['indirectNodeIds']) {
+      setTimeout(() => this.applyHighlights(), 80);
     }
   }
 
@@ -213,7 +220,8 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
   }
 
   private initCytoscape(): void {
-    if (!this.graphData || !this.cyContainer?.nativeElement) return;
+    if (!this.cyContainer?.nativeElement) return;
+    if (!this.graphData || !this.graphData.nodes || this.graphData.nodes.length === 0) return;
 
     const elements: any[] = [];
 
@@ -245,158 +253,170 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
       this.cy.destroy();
     }
 
-    this.cy = cytoscape({
-      container: this.cyContainer.nativeElement,
-      elements: elements,
-      style: [
-        {
-          selector: 'node',
-          style: {
-            'label': 'data(label)',
-            'color': '#ffffff',
-            'font-size': '12px',
-            'font-weight': 'bold',
-            'text-valign': 'bottom',
-            'text-margin-y': 8,
-            'text-outline-color': '#020617',
-            'text-outline-width': 4,
-            'text-outline-opacity': 1,
-            'width': 42,
-            'height': 42,
-            'border-width': 2.5,
-            'border-color': '#64748b'
+    try {
+      this.cy = cytoscape({
+        container: this.cyContainer.nativeElement,
+        elements: elements,
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'color': '#ffffff',
+              'font-size': '12px',
+              'font-weight': 'bold',
+              'text-valign': 'bottom',
+              'text-margin-y': 8,
+              'text-outline-color': '#020617',
+              'text-outline-width': 4,
+              'text-outline-opacity': 1,
+              'width': 44,
+              'height': 44,
+              'border-width': 2.5,
+              'border-color': '#64748b'
+            }
+          },
+          {
+            selector: 'node[type = "API"]',
+            style: {
+              'background-color': '#3b82f6',
+              'border-color': '#93c5fd'
+            }
+          },
+          {
+            selector: 'node[type = "APPLICATION"]',
+            style: {
+              'background-color': '#a855f7',
+              'border-color': '#e9d5ff',
+              'shape': 'round-rectangle'
+            }
+          },
+          {
+            selector: 'node[type = "DATABASE"]',
+            style: {
+              'background-color': '#22c55e',
+              'border-color': '#86efac',
+              'shape': 'barrel'
+            }
+          },
+          {
+            selector: 'node[type = "EXTERNAL_SYSTEM"]',
+            style: {
+              'background-color': '#f59e0b',
+              'border-color': '#fde68a',
+              'shape': 'diamond'
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 2.5,
+              'line-color': '#475569',
+              'target-arrow-color': '#94a3b8',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'opacity': 0.8
+            }
+          },
+          {
+            selector: '.highlighted-failed',
+            style: {
+              'background-color': '#dc2626',
+              'border-color': '#ffffff',
+              'border-width': 6,
+              'width': 58,
+              'height': 58,
+              'opacity': 1.0,
+              'z-index': 999
+            }
+          },
+          {
+            selector: '.highlighted-direct',
+            style: {
+              'background-color': '#0284c7',
+              'border-color': '#38bdf8',
+              'border-width': 4.5,
+              'width': 50,
+              'height': 50,
+              'opacity': 1.0,
+              'z-index': 900
+            }
+          },
+          {
+            selector: '.highlighted-indirect',
+            style: {
+              'background-color': '#9333ea',
+              'border-color': '#f43f5e',
+              'border-width': 4,
+              'width': 46,
+              'height': 46,
+              'opacity': 1.0,
+              'z-index': 800
+            }
+          },
+          {
+            selector: '.edge-direct',
+            style: {
+              'line-color': '#38bdf8',
+              'target-arrow-color': '#38bdf8',
+              'width': 4.5,
+              'opacity': 1.0,
+              'z-index': 900
+            }
+          },
+          {
+            selector: '.edge-indirect',
+            style: {
+              'line-color': '#f43f5e',
+              'target-arrow-color': '#f43f5e',
+              'width': 3.5,
+              'line-style': 'dashed',
+              'opacity': 1.0,
+              'z-index': 800
+            }
+          },
+          {
+            selector: '.dimmed',
+            style: {
+              'opacity': 0.35
+            }
           }
-        },
-        {
-          selector: 'node[type = "API"]',
-          style: {
-            'background-color': '#3b82f6',
-            'border-color': '#93c5fd'
-          }
-        },
-        {
-          selector: 'node[type = "APPLICATION"]',
-          style: {
-            'background-color': '#a855f7',
-            'border-color': '#e9d5ff',
-            'shape': 'round-rectangle'
-          }
-        },
-        {
-          selector: 'node[type = "DATABASE"]',
-          style: {
-            'background-color': '#22c55e',
-            'border-color': '#86efac',
-            'shape': 'barrel'
-          }
-        },
-        {
-          selector: 'node[type = "EXTERNAL_SYSTEM"]',
-          style: {
-            'background-color': '#f59e0b',
-            'border-color': '#fde68a',
-            'shape': 'diamond'
-          }
-        },
-        {
-          selector: 'edge',
-          style: {
-            'width': 2.5,
-            'line-color': '#475569',
-            'target-arrow-color': '#94a3b8',
-            'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier',
-            'opacity': 0.75
-          }
-        },
-        {
-          selector: '.highlighted-failed',
-          style: {
-            'background-color': '#dc2626',
-            'border-color': '#ffffff',
-            'border-width': 6,
-            'width': 56,
-            'height': 56,
-            'opacity': 1.0
-          }
-        },
-        {
-          selector: '.highlighted-direct',
-          style: {
-            'background-color': '#0284c7',
-            'border-color': '#38bdf8',
-            'border-width': 4.5,
-            'width': 48,
-            'height': 48,
-            'opacity': 1.0
-          }
-        },
-        {
-          selector: '.highlighted-indirect',
-          style: {
-            'background-color': '#9333ea',
-            'border-color': '#f43f5e',
-            'border-width': 4,
-            'width': 44,
-            'height': 44,
-            'opacity': 1.0
-          }
-        },
-        {
-          selector: '.edge-direct',
-          style: {
-            'line-color': '#38bdf8',
-            'target-arrow-color': '#38bdf8',
-            'width': 4,
-            'opacity': 1.0
-          }
-        },
-        {
-          selector: '.edge-indirect',
-          style: {
-            'line-color': '#f43f5e',
-            'target-arrow-color': '#f43f5e',
-            'width': 3,
-            'line-style': 'dashed',
-            'opacity': 1.0
-          }
-        },
-        {
-          selector: '.dimmed',
-          style: {
-            'opacity': 0.12
-          }
+        ]
+      });
+
+      const layout = this.cy.layout({
+        name: 'breadthfirst',
+        directed: true,
+        padding: 50,
+        spacingFactor: 1.25,
+        animate: false
+      });
+
+      layout.one('layoutstop', () => {
+        if (this.cy) {
+          this.cy.resize();
+          this.applyHighlights();
+          this.cy.fit(undefined, 40);
         }
-      ],
-      layout: {
-        name: 'cose',
-        animate: false,
-        padding: 60,
-        nodeRepulsion: () => 6500,
-        idealEdgeLength: () => 110
-      }
-    });
+      });
 
-    setTimeout(() => {
-      if (this.cy) {
-        this.cy.resize();
-        this.cy.fit();
-        this.applyHighlights();
-      }
-    }, 100);
+      layout.run();
 
-    this.cy.on('tap', 'node', (evt: any) => {
-      const nodeData = evt.target.data('rawNode');
-      this.selectedNode = nodeData;
-      this.highlightNeighborhood(evt.target);
-    });
+      this.cy.on('tap', 'node', (evt: any) => {
+        const nodeData = evt.target.data('rawNode');
+        this.selectedNode = nodeData;
+        this.highlightNeighborhood(evt.target);
+      });
 
-    this.cy.on('tap', (evt: any) => {
-      if (evt.target === this.cy) {
-        this.selectedNode = null;
-        this.clearHighlights();
-      }
-    });
+      this.cy.on('tap', (evt: any) => {
+        if (evt.target === this.cy) {
+          this.selectedNode = null;
+          this.clearHighlights();
+        }
+      });
+    } catch (e) {
+      console.error('Cytoscape initialization failed:', e);
+    }
   }
 
   private highlightNeighborhood(node: any): void {
@@ -444,6 +464,14 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
           edge.addClass('dimmed');
         }
       });
+
+      // Automatically focus and fit viewport on highlighted sub-graph elements
+      const subGraphElements = this.cy.nodes('.highlighted-failed, .highlighted-direct, .highlighted-indirect');
+      if (subGraphElements.length > 0) {
+        this.cy.fit(subGraphElements, 60);
+      }
+    } else {
+      this.cy.fit(undefined, 40);
     }
   }
 
@@ -465,7 +493,7 @@ export class GraphCanvasComponent implements OnChanges, AfterViewInit, OnDestroy
   resetLayout(): void {
     if (this.cy) {
       this.cy.resize();
-      this.cy.fit();
+      this.cy.fit(undefined, 40);
     }
   }
 
