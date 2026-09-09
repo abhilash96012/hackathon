@@ -1,15 +1,16 @@
 # Build Stage
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package*.json ./
+COPY frontend/package*.json package*.json ./
 RUN npm install
-COPY . .
+COPY frontend/ ./
+COPY . ./
 RUN npm run build -- --configuration production
 
 # Production Stage
 FROM nginx:alpine
 COPY --from=build /app/dist/ups-dependency-lens/browser /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY frontend/nginx.conf* nginx.conf* /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
